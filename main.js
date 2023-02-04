@@ -1,10 +1,14 @@
 require('dotenv').config();
+
 const translate = require('@iamtraction/google-translate')
-const { Client, GatewayIntentBits, messageLink } = require('discord.js');
+
+const { Client, GatewayIntentBits, messageLink, userMention } = require('discord.js');
+
 const client = new Client({intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions
 ]})
 
 
@@ -22,6 +26,11 @@ const openai = new OpenAIApi(configuration);
 client.on('messageCreate', async function(message){
     try {
         if(message.author.bot) return;
+        
+        console.log("User:" + " " + message.content);
+        
+        const thinkingmsg = await message.channel.send("מחשב...");
+        console.log("SearchDesciption: Thinking...");
 
         const gptResponse = await openai.createCompletion({
             model: "text-davinci-003",
@@ -31,8 +40,15 @@ client.on('messageCreate', async function(message){
         })
 
         translate(`${gptResponse.data.choices[0].text}`, { to: 'hebrew' }).then(res => {
-            message.reply("```" + res.text + "```");
-            console.log(res.text);
+            
+            thinkingmsg.edit("**__SearchDescription Response in Hebrew__**" + "```" + res.text + "```" + "**__SearchDescription Response in English__**" + "```" + `${gptResponse.data.choices[0].text}` + "```");
+            thinkingmsg.react("👍");
+            thinkingmsg.react("👎");
+
+            console.log("  ");
+            console.log("  ");
+            console.log("gptResponse (in English):" + " " + `${gptResponse.data.choices[0].text}`);
+
         }).catch(err => {
             console.error(err);
         });
